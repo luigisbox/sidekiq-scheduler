@@ -75,6 +75,18 @@ module SidekiqScheduler
       Sidekiq::Client.push(sanitize_job_config(config))
     end
 
+    # Prepends the job using the Sidekiq client.
+    #
+    # @param [Hash] config The job configuration
+    def self.prepend_with_sidekiq(config)
+      enqueue_with_sidekiq(config)
+      Sidekiq.redis do |r|
+        queue_name = "queue:#{config["queue"]}"
+        last_job = r.lpop(queue_name)
+        r.rpush(queue_name, last_job)
+      end
+    end
+
     # Enqueues the job using the ActiveJob.
     #
     # @param [Hash] config The job configuration

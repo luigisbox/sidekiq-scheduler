@@ -169,6 +169,20 @@ module SidekiqScheduler
       end
     end
 
+    # Prepends a job to queue based on a config hash
+    #
+    # @param job_config [Hash] the job configuration
+    # @param time [Time] time the job is enqueued
+    def prepend_job(job_config, time = Time.now)
+      config = prepare_arguments(job_config.dup)
+
+      if config.delete('include_metadata')
+        config['args'] = arguments_with_metadata(config['args'], scheduled_at: time.to_f)
+      end
+
+      SidekiqScheduler::Utils.prepend_with_sidekiq(config)
+    end
+
     def rufus_scheduler_options
       @rufus_scheduler_options ||= {}
     end
